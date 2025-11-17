@@ -27,11 +27,55 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
+class TableQuery:
+    """Helper class para compatibilidade com sintaxe antiga"""
+    def __init__(self, client, table_name):
+        self.client = client
+        self.table_name = table_name
+        self._filters = {}
+        self._columns = "*"
+        self._order_by = None
+        self._order_desc = False
+    
+    def select(self, columns="*"):
+        self._columns = columns
+        return self
+    
+    def eq(self, column, value):
+        self._filters[column] = f"eq.{value}"
+        return self
+    
+    def order(self, column, desc=False):
+        self._order_by = column
+        self._order_desc = desc
+        return self
+    
+    def execute(self):
+        """Execute query"""
+        params = {"select": self._columns}
+        params.update(self._filters)
+        if self._order_by:
+            params["order"] = f"{self._order_by}.{'desc' if self._order_desc else 'asc'}"
+        
+        response = self.client.client.get(f"/{self.table_name}", params=params)
+        response.raise_for_status()
+        
+        # Retornar objeto com .data
+        class Response:
+            def __init__(self, data):
+                self.data = data
+        
+        return Response(response.json())
+
 class SupabaseClient:
     """Cliente simples para Supabase usando httpx"""
     
     def __init__(self):
         self.client = httpx.Client(base_url=REST_URL, headers=HEADERS, timeout=30.0)
+    
+    def table(self, table_name: str):
+        """Retorna TableQuery para compatibilidade"""
+        return TableQuery(self, table_name)
     
     def select(self, table: str, columns: str = "*", filters: Dict[str, Any] = None) -> List[Dict]:
         """SELECT query"""

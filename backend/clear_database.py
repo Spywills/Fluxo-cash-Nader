@@ -32,18 +32,24 @@ def clear_database():
         
         # 1. Deletar transações
         print("🗑️  Deletando transações...")
-        result = supabase.table('transactions').delete().neq('id', 0).execute()
-        print(f"   ✅ {len(result.data)} transações deletadas")
+        transactions = supabase.select('transactions', columns='id')
+        for t in transactions:
+            supabase.delete('transactions', filters={'id': f'eq.{t["id"]}'})
+        print(f"   ✅ {len(transactions)} transações deletadas")
         
         # 2. Deletar comprovantes
         print("🗑️  Deletando comprovantes...")
-        result = supabase.table('proofs').delete().neq('id', 0).execute()
-        print(f"   ✅ {len(result.data)} comprovantes deletados")
+        proofs = supabase.select('proofs', columns='id')
+        for p in proofs:
+            supabase.delete('proofs', filters={'id': f'eq.{p["id"]}'})
+        print(f"   ✅ {len(proofs)} comprovantes deletados")
         
         # 3. Deletar clientes
         print("🗑️  Deletando clientes...")
-        result = supabase.table('clients').delete().neq('id', 0).execute()
-        print(f"   ✅ {len(result.data)} clientes deletados")
+        clients = supabase.select('clients', columns='id')
+        for c in clients:
+            supabase.delete('clients', filters={'id': f'eq.{c["id"]}'})
+        print(f"   ✅ {len(clients)} clientes deletados")
         
         print("\n" + "=" * 60)
         print("✅ Banco de dados limpo com sucesso!")
@@ -51,15 +57,15 @@ def clear_database():
         
         # Verificar
         print("\n🔍 Verificando...")
-        clients = supabase.table('clients').select('*', count='exact').execute()
-        proofs = supabase.table('proofs').select('*', count='exact').execute()
-        transactions = supabase.table('transactions').select('*', count='exact').execute()
+        clients_check = supabase.select('clients', columns='id')
+        proofs_check = supabase.select('proofs', columns='id')
+        transactions_check = supabase.select('transactions', columns='id')
         
-        print(f"   Clientes: {clients.count}")
-        print(f"   Comprovantes: {proofs.count}")
-        print(f"   Transações: {transactions.count}")
+        print(f"   Clientes: {len(clients_check)}")
+        print(f"   Comprovantes: {len(proofs_check)}")
+        print(f"   Transações: {len(transactions_check)}")
         
-        if clients.count == 0 and proofs.count == 0 and transactions.count == 0:
+        if len(clients_check) == 0 and len(proofs_check) == 0 and len(transactions_check) == 0:
             print("\n✅ Banco de dados completamente limpo!")
         
     except Exception as e:
