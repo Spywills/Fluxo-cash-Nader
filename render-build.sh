@@ -3,11 +3,11 @@
 
 echo "📦 Instalando dependências do sistema..."
 
-# Instalar Tesseract OCR
+# Instalar Tesseract OCR e Poppler (para PDFs)
 apt-get update
-apt-get install -y tesseract-ocr tesseract-ocr-por
+apt-get install -y tesseract-ocr tesseract-ocr-por poppler-utils
 
-echo "✅ Tesseract instalado!"
+echo "✅ Tesseract e Poppler instalados!"
 
 # Instalar dependências Python
 echo "📦 Instalando dependências Python..."
