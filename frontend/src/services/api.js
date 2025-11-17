@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE = 'http://127.0.0.1:8000';
+// Usar variável de ambiente ou fallback para desenvolvimento local
+const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -8,6 +9,11 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Log da URL da API (apenas em desenvolvimento)
+if (import.meta.env.DEV) {
+  console.log('🔗 API URL:', API_BASE);
+}
 
 // Clients
 export const getClients = () => api.get('/clients');
