@@ -1,0 +1,4 @@
+# Requirements for Render.com deployment
+# This file points to the actual requirements in backend/
+
+-r backend/requirements.txt

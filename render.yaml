@@ -1,0 +1,22 @@
+# Render.com configuration
+services:
+  # Backend FastAPI
+  - type: web
+    name: fluxocash-backend
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main_supabase:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: DEBUG
+        value: False
+    healthCheckPath: /health
