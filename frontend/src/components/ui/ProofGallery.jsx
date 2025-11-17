@@ -179,7 +179,7 @@ export const ProofGallery = ({ clientId, onRefresh = () => {}, onBalanceUpdate =
                 </p>
                 
                 {/* 🌟 Valor extraído */}
-                {proof.extraction_status === 'EXTRACTED' && proof.extracted_value && (
+                {(proof.extraction_status === 'EXTRACTED' || proof.extraction_status === 'EXTRACTED_WITH_ERROR') && proof.extracted_value && (
                   <p className="text-sm font-bold text-green-600 mt-1">
                     R$ {proof.extracted_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
@@ -197,7 +197,7 @@ export const ProofGallery = ({ clientId, onRefresh = () => {}, onBalanceUpdate =
               )}
 
               {/* 🌟 NOVO: Botão de Depósito */}
-              {proof.extraction_status === 'EXTRACTED' && proof.extracted_value && !proof.deposited && (
+              {(proof.extraction_status === 'EXTRACTED' || proof.extraction_status === 'EXTRACTED_WITH_ERROR') && proof.extracted_value && !proof.deposited && (
                 <Button
                   variant="success"
                   size="sm"
