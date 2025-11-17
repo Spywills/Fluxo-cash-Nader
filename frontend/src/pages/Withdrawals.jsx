@@ -410,7 +410,7 @@ export default function Withdrawals() {
                     return (
                       <tr key={w.id} className="hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-4 font-medium text-gray-900">
-                          {w.client || client?.name || `Cliente #${w.client_id}`}
+                          {w.client || client?.name || (w.client_id ? `Cliente #${w.client_id}` : 'Cliente Desconhecido')}
                         </td>
                         <td className="py-4 px-4 font-bold text-red-600 whitespace-nowrap">
                           {formatMoney(amount)}
