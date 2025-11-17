@@ -15,6 +15,14 @@ from pathlib import Path
 # Importar o módulo de extração
 from .extractors import extract_proof_data
 
+# Importar funções do banco de dados
+from .db_helpers import (
+    get_all_clients, get_client_by_id, create_client, update_client, delete_client,
+    update_client_balance, get_client_proofs, create_proof, check_duplicate_proof,
+    mark_proof_as_deposited, delete_proof, get_all_transactions, get_client_transactions,
+    create_transaction, update_transaction, delete_transaction, get_global_statistics
+)
+
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,
@@ -42,31 +50,24 @@ app.add_middleware(
 )
 
 # ========================================
-# FUNÇÕES AUXILIARES
+# CONFIGURAÇÃO DO BANCO DE DADOS
 # ========================================
 
-def check_duplicate(file_hash: str, client_id: int) -> bool:
-    """Verifica se arquivo duplicado já existe para este cliente"""
-    for proof in proofs_db.values():
-        if proof['client_id'] == client_id and proof['file_hash'] == file_hash:
-            return True
-    return False
+# Inicializar conexão com Supabase
+from .database import init_database
 
-# Mock database (vazio para limpar)
-proofs_db = {}
-
-# Clientes database (vazio para limpar)
-clients_db = {}
-
-# Transações database
-transactions_db = []
-transaction_counter = 0
-
-# Mock database para crypto operations (vazio - limpo)
-crypto_operations_db = {}
-
-# Mock database para comprovantes (vazio - limpo)
-comprovantes_db = {}
+# Tentar conectar ao Supabase
+if init_database():
+    logger.info("✅ Conectado ao Supabase PostgreSQL")
+    USE_SUPABASE = True
+else:
+    logger.warning("⚠️ Supabase não disponível, usando memória")
+    USE_SUPABASE = False
+    # Fallback para dicionários em memória
+    proofs_db = {}
+    clients_db = {}
+    transactions_db = []
+    transaction_counter = 0
 
 # ========================================
 # HEALTH CHECK
