@@ -24,11 +24,7 @@ def get_supabase_client() -> Client:
     if supabase is None:
         if not SUPABASE_URL or not SUPABASE_KEY:
             raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set")
-        # Criar cliente sem opções extras que podem causar conflito
-        supabase = create_client(
-            supabase_url=SUPABASE_URL,
-            supabase_key=SUPABASE_KEY
-        )
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     return supabase
 
 def init_database():
