@@ -72,9 +72,11 @@ class SupabaseClient:
     
     def __init__(self):
         self.client = httpx.Client(base_url=REST_URL, headers=HEADERS, timeout=30.0)
+        print(f"✅ SupabaseClient inicializado com método .table()")
     
     def table(self, table_name: str):
         """Retorna TableQuery para compatibilidade"""
+        print(f"🔍 Chamando .table('{table_name}')")
         return TableQuery(self, table_name)
     
     def select(self, table: str, columns: str = "*", filters: Dict[str, Any] = None) -> List[Dict]:
