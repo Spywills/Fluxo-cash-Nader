@@ -392,7 +392,8 @@ def create_deposit_from_proof(proof_id: int):
         if proof.get('deposited', False):
             return {"error": "Este comprovante já foi creditado anteriormente"}, 400
         
-        if proof['extraction_status'] != 'EXTRACTED':
+        # Aceitar EXTRACTED ou EXTRACTED_WITH_ERROR
+        if proof['extraction_status'] not in ['EXTRACTED', 'EXTRACTED_WITH_ERROR']:
             return {"error": "Comprovante não tem valor extraído"}, 400
         
         if proof['extracted_value'] is None or proof['extracted_value'] == 0:
