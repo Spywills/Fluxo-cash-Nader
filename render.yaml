@@ -13,10 +13,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
       - key: DEBUG
         value: False
     healthCheckPath: /health
