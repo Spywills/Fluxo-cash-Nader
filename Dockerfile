@@ -25,5 +25,5 @@ COPY backend/ .
 # Expor porta
 EXPOSE 8000
 
-# Comando para iniciar
-CMD ["uvicorn", "app.main_supabase:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando para iniciar (Railway usa $PORT)
+CMD uvicorn app.main_supabase:app --host 0.0.0.0 --port ${PORT:-8000}
