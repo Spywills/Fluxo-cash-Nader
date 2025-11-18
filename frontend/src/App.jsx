@@ -8,17 +8,42 @@ import Clients from './pages/Clients_pro';
 import Withdrawals from './pages/Withdrawals';
 import History from './pages/History';
 import BankSummary from './pages/BankSummary';
+import Login from './pages/Login';
 import { Alert } from './components/ui/Alert';
 import { healthCheck } from './services/api';
 import './index.css';
 
 function App() {
+  // Estado de autenticação
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   // Recuperar página atual do localStorage ou usar dashboard como padrão
   const [currentPage, setCurrentPage] = useState(() => {
     return localStorage.getItem('currentPage') || 'dashboard';
   });
   const [connectionError, setConnectionError] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Verificar autenticação ao carregar
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const user = localStorage.getItem('auth_user');
+    
+    if (token && user) {
+      try {
+        setCurrentUser(JSON.parse(user));
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+      }
+    }
+    
+    setAuthLoading(false);
+  }, []);
 
   // Salvar página atual no localStorage quando mudar
   const handlePageChange = (page) => {
@@ -62,9 +87,40 @@ function App() {
     }
   };
 
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+  };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Carregando...</div>
+      </div>
+    );
+  }
+
+  // Mostrar tela de login se não autenticado
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Login onLoginSuccess={handleLoginSuccess} />
+        <Toaster position="bottom-right" richColors />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <Header />
+      <Header currentUser={currentUser} onLogout={handleLogout} />
       <Navigation currentPage={currentPage} onPageChange={handlePageChange} />
       
       <main className="flex-1">

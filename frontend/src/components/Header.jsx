@@ -1,7 +1,7 @@
 import React from 'react';
-import { Wallet, Bell } from 'lucide-react';
+import { Wallet, Bell, LogOut, User } from 'lucide-react';
 
-export default function Header() {
+export default function Header({ currentUser, onLogout }) {
   const today = new Date().toLocaleDateString('pt-BR', { 
     weekday: 'long', 
     year: 'numeric', 
@@ -32,12 +32,38 @@ export default function Header() {
               <p className="text-xs font-medium opacity-75">📅 Hoje</p>
               <p className="text-xs sm:text-sm font-semibold capitalize">{today}</p>
             </div>
+
+            {/* User Info */}
+            {currentUser && (
+              <div className="flex items-center gap-2 bg-slate-700/50 px-3 py-2 rounded-lg">
+                <User className="h-4 w-4 text-slate-300" />
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs text-slate-400">Usuário</p>
+                  <p className="text-sm font-semibold text-white">
+                    {currentUser.full_name || currentUser.username}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <button className="bg-slate-700/50 hover:bg-slate-700 text-white p-2 sm:p-2.5 rounded-lg transition-all shadow-md hover:shadow-lg relative">
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
                 0
               </span>
             </button>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 p-2 sm:p-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline text-sm font-medium">Sair</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

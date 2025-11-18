@@ -1,5 +1,6 @@
 FROM python:3.9-slim
 
+# Build version: 2024-11-18
 # Instalar dependências do sistema incluindo Tesseract
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \

@@ -3,6 +3,24 @@
 -- PostgreSQL Database
 -- ============================================
 
+-- Tabela de Usuários (Sistema de Login)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    is_admin BOOLEAN DEFAULT FALSE,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices para usuários
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
 -- Tabela de Clientes
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
@@ -72,6 +90,9 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -79,6 +100,7 @@ CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Comentários nas tabelas
+COMMENT ON TABLE users IS 'Tabela de usuários do sistema (login/autenticação)';
 COMMENT ON TABLE clients IS 'Tabela de clientes do sistema';
 COMMENT ON TABLE proofs IS 'Tabela de comprovantes enviados pelos clientes';
 COMMENT ON TABLE transactions IS 'Tabela de transações (depósitos e saques)';

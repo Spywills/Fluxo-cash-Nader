@@ -6,7 +6,7 @@ Sistema de gestão de clientes e comprovantes com extração automática de valo
 import logging
 import hashlib
 from datetime import datetime
-from fastapi import FastAPI, Body, UploadFile, File
+from fastapi import FastAPI, Body, UploadFile, File, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any
 import tempfile
@@ -14,6 +14,12 @@ from pathlib import Path
 
 # Importar o módulo de extração
 from .extractors import extract_proof_data
+
+# Importar autenticação
+from .auth import (
+    authenticate_user, create_access_token, create_user,
+    get_current_user, get_current_admin_user, update_last_login
+)
 
 # Importar funções do banco de dados
 from .db_helpers import (
@@ -65,11 +71,136 @@ def health():
     }
 
 # ========================================
+# AUTENTICAÇÃO
+# ========================================
+
+@app.post("/auth/login")
+def login(data: Dict[str, Any] = Body(...)):
+    """
+    Endpoint de login
+    Body: { "username": "...", "password": "..." }
+    """
+    try:
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+        
+        if not username or not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username e senha são obrigatórios"
+            )
+        
+        # Autenticar usuário
+        user = authenticate_user(username, password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Username ou senha incorretos",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Criar token
+        access_token = create_access_token(data={"sub": user['username']})
+        
+        # Atualizar último login
+        update_last_login(user['id'])
+        
+        logger.info(f"✅ Login bem-sucedido: {username}")
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user['id'],
+                "username": user['username'],
+                "email": user['email'],
+                "full_name": user.get('full_name', ''),
+                "is_admin": user.get('is_admin', False)
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no login: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.post("/auth/register")
+def register(data: Dict[str, Any] = Body(...)):
+    """
+    Endpoint de registro de novo usuário
+    Body: { "username": "...", "email": "...", "password": "...", "full_name": "..." }
+    """
+    try:
+        username = data.get("username", "").strip()
+        email = data.get("email", "").strip()
+        password = data.get("password", "")
+        full_name = data.get("full_name", "").strip()
+        
+        if not username or not email or not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username, email e senha são obrigatórios"
+            )
+        
+        if len(password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Senha deve ter no mínimo 6 caracteres"
+            )
+        
+        # Criar usuário
+        user = create_user(
+            username=username,
+            email=email,
+            password=password,
+            full_name=full_name,
+            is_admin=False
+        )
+        
+        logger.info(f"✅ Novo usuário registrado: {username}")
+        
+        return {
+            "success": True,
+            "message": "Usuário criado com sucesso",
+            "user": user
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Erro no registro: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.get("/auth/me")
+def get_me(current_user: dict = Depends(get_current_user)):
+    """Retorna informações do usuário logado"""
+    return {
+        "user": current_user
+    }
+
+@app.post("/auth/logout")
+def logout(current_user: dict = Depends(get_current_user)):
+    """Endpoint de logout (apenas para consistência, token é gerenciado no frontend)"""
+    logger.info(f"✅ Logout: {current_user['username']}")
+    return {
+        "success": True,
+        "message": "Logout realizado com sucesso"
+    }
+
+# ========================================
 # CLIENTS (CLIENTES)
 # ========================================
 
 @app.get("/clients")
-def get_clients():
+def get_clients(current_user: dict = Depends(get_current_user)):
     try:
         clients = get_all_clients()
         # Adicionar saldo_atual para compatibilidade
@@ -98,7 +229,7 @@ def get_client(client_id: int):
         return {"error": str(e)}, 500
 
 @app.post("/clients")
-def create_client(data: Dict[str, Any] = Body(...)):
+def create_client(data: Dict[str, Any] = Body(...), current_user: dict = Depends(get_current_user)):
     try:
         name = data.get("name", "").strip()
         if not name:
@@ -613,7 +744,7 @@ def delete_withdrawal(client_id: int, withdrawal_id: int):
 # ========================================
 
 @app.get("/global-balance")
-def get_global_balance():
+def get_global_balance(current_user: dict = Depends(get_current_user)):
     try:
         stats = get_global_statistics()
         return stats
