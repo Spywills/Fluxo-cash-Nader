@@ -107,17 +107,17 @@ def create_user(username: str, email: str, password: str, full_name: str = "", i
     # Criar usuário
     password_hash = get_password_hash(password)
     
-    response = supabase.table('users').insert({
+    # Usar método insert direto do cliente
+    user = supabase.insert('users', {
         'username': username,
         'email': email,
         'password_hash': password_hash,
         'full_name': full_name,
         'is_active': True,
         'is_admin': is_admin
-    }).execute()
+    })
     
-    if response.data and len(response.data) > 0:
-        user = response.data[0]
+    if user:
         # Remover password_hash da resposta
         user.pop('password_hash', None)
         return user
@@ -128,9 +128,10 @@ def create_user(username: str, email: str, password: str, full_name: str = "", i
 def update_last_login(user_id: int):
     """Atualiza timestamp do último login"""
     supabase = get_supabase_client()
-    supabase.table('users').update({
+    # Usar método update direto do cliente
+    supabase.update('users', {
         'last_login': datetime.utcnow().isoformat()
-    }).eq('id', user_id).execute()
+    }, {'id': f'eq.{user_id}'})
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):

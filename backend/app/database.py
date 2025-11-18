@@ -8,13 +8,24 @@ from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Carregar variáveis de ambiente do arquivo .env
-env_path = Path(__file__).parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+# Carregar variáveis de ambiente
+# Prioridade: 1. Variáveis de ambiente do sistema, 2. .env.staging, 3. .env
+env_staging = Path(__file__).parent.parent / '.env.staging'
+env_default = Path(__file__).parent.parent / '.env'
+
+# Tentar carregar .env.staging primeiro, depois .env
+if env_staging.exists():
+    load_dotenv(dotenv_path=env_staging, override=False)
+elif env_default.exists():
+    load_dotenv(dotenv_path=env_default, override=False)
 
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+# Log para debug
+if os.getenv("ENVIRONMENT") == "staging":
+    print(f"🔧 [STAGING] Usando Supabase: {SUPABASE_URL[:30]}...")
 
 # REST API URL
 REST_URL = f"{SUPABASE_URL}/rest/v1"
