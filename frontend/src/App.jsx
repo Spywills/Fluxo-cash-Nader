@@ -8,6 +8,7 @@ import Clients from './pages/Clients_pro';
 import Withdrawals from './pages/Withdrawals';
 import History from './pages/History';
 import BankSummary from './pages/BankSummary';
+import Users from './pages/Users';
 import Login from './pages/Login';
 import { Alert } from './components/ui/Alert';
 import { healthCheck } from './services/api';
@@ -82,6 +83,12 @@ function App() {
         return <History />;
       case 'bank-summary':
         return <BankSummary />;
+      case 'users':
+        // Apenas admins podem acessar
+        if (currentUser?.is_admin) {
+          return <Users />;
+        }
+        return <Dashboard />;
       default:
         return <Dashboard />;
     }
@@ -121,7 +128,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
       <Header currentUser={currentUser} onLogout={handleLogout} />
-      <Navigation currentPage={currentPage} onPageChange={handlePageChange} />
+      <Navigation currentPage={currentPage} onPageChange={handlePageChange} currentUser={currentUser} />
       
       <main className="flex-1">
         {!isOnline && (

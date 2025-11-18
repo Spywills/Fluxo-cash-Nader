@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Users, TrendingDown, History, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, TrendingDown, History, Building2, UserCog } from 'lucide-react';
 
-export default function Navigation({ currentPage, onPageChange }) {
+export default function Navigation({ currentPage, onPageChange, currentUser }) {
   const pages = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'clients', label: 'Clientes', icon: Users },
@@ -9,6 +9,11 @@ export default function Navigation({ currentPage, onPageChange }) {
     { id: 'history', label: 'Histórico', icon: History },
     { id: 'bank-summary', label: 'Resumo', icon: Building2 },
   ];
+
+  // Adicionar página de usuários apenas para admins
+  if (currentUser?.is_admin) {
+    pages.push({ id: 'users', label: 'Usuários', icon: UserCog });
+  }
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">

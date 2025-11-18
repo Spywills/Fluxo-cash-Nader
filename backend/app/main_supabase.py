@@ -127,17 +127,19 @@ def login(data: Dict[str, Any] = Body(...)):
             detail=str(e)
         )
 
-@app.post("/auth/register")
-def register(data: Dict[str, Any] = Body(...)):
+@app.post("/auth/create-user")
+def create_user_endpoint(data: Dict[str, Any] = Body(...), current_user: dict = Depends(get_current_admin_user)):
     """
-    Endpoint de registro de novo usuário
-    Body: { "username": "...", "email": "...", "password": "...", "full_name": "..." }
+    Endpoint para admin criar novo usuário
+    Requer autenticação de admin
+    Body: { "username": "...", "email": "...", "password": "...", "full_name": "...", "is_admin": false }
     """
     try:
         username = data.get("username", "").strip()
         email = data.get("email", "").strip()
         password = data.get("password", "")
         full_name = data.get("full_name", "").strip()
+        is_admin = data.get("is_admin", False)
         
         if not username or not email or not password:
             raise HTTPException(
@@ -157,10 +159,10 @@ def register(data: Dict[str, Any] = Body(...)):
             email=email,
             password=password,
             full_name=full_name,
-            is_admin=False
+            is_admin=is_admin
         )
         
-        logger.info(f"✅ Novo usuário registrado: {username}")
+        logger.info(f"✅ Novo usuário criado por admin {current_user['username']}: {username}")
         
         return {
             "success": True,
@@ -173,7 +175,7 @@ def register(data: Dict[str, Any] = Body(...)):
             detail=str(e)
         )
     except Exception as e:
-        logger.error(f"Erro no registro: {str(e)}")
+        logger.error(f"Erro ao criar usuário: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
@@ -194,6 +196,118 @@ def logout(current_user: dict = Depends(get_current_user)):
         "success": True,
         "message": "Logout realizado com sucesso"
     }
+
+# ========================================
+# GERENCIAMENTO DE USUÁRIOS (ADMIN ONLY)
+# ========================================
+
+@app.get("/users")
+def get_users(current_user: dict = Depends(get_current_admin_user)):
+    """Lista todos os usuários (apenas admin)"""
+    try:
+        from .database import get_supabase_client
+        supabase = get_supabase_client()
+        
+        response = supabase.table('users').select('id,username,email,full_name,is_active,is_admin,created_at,last_login').execute()
+        
+        return {
+            "users": response.data,
+            "total": len(response.data)
+        }
+    except Exception as e:
+        logger.error(f"Erro ao listar usuários: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.put("/users/{user_id}")
+def update_user(user_id: int, data: Dict[str, Any] = Body(...), current_user: dict = Depends(get_current_admin_user)):
+    """Atualiza usuário (apenas admin)"""
+    try:
+        from .database import get_supabase_client
+        supabase = get_supabase_client()
+        
+        # Não permitir que admin desative a si mesmo
+        if user_id == current_user['id'] and 'is_active' in data and not data['is_active']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Você não pode desativar sua própria conta"
+            )
+        
+        # Preparar dados para atualização
+        update_data = {}
+        allowed_fields = ['full_name', 'email', 'is_active', 'is_admin']
+        for field in allowed_fields:
+            if field in data:
+                update_data[field] = data[field]
+        
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhum campo para atualizar"
+            )
+        
+        # Atualizar usuário
+        updated_user = supabase.update('users', update_data, {'id': f'eq.{user_id}'})
+        
+        logger.info(f"✅ Usuário {user_id} atualizado por admin {current_user['username']}")
+        
+        return {
+            "success": True,
+            "message": "Usuário atualizado com sucesso",
+            "user": updated_user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar usuário: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, current_user: dict = Depends(get_current_admin_user)):
+    """Deleta usuário (apenas admin)"""
+    try:
+        from .database import get_supabase_client
+        supabase = get_supabase_client()
+        
+        # Não permitir que admin delete a si mesmo
+        if user_id == current_user['id']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Você não pode deletar sua própria conta"
+            )
+        
+        # Buscar usuário
+        response = supabase.table('users').select('username').eq('id', user_id).execute()
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+        
+        username = response.data[0]['username']
+        
+        # Deletar usuário
+        supabase.delete('users', {'id': f'eq.{user_id}'})
+        
+        logger.info(f"✅ Usuário {username} deletado por admin {current_user['username']}")
+        
+        return {
+            "success": True,
+            "message": f"Usuário {username} deletado com sucesso"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao deletar usuário: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 # ========================================
 # CLIENTS (CLIENTES)

@@ -93,8 +93,13 @@ export const healthCheck = () => api.get('/health');
 
 // Auth
 export const login = (username, password) => api.post('/auth/login', { username, password });
-export const register = (username, email, password, full_name) => api.post('/auth/register', { username, email, password, full_name });
 export const getMe = () => api.get('/auth/me');
 export const logout = () => api.post('/auth/logout');
+
+// User Management (Admin only)
+export const getUsers = () => api.get('/users');
+export const createUser = (username, email, password, full_name, is_admin) => api.post('/auth/create-user', { username, email, password, full_name, is_admin });
+export const updateUser = (userId, data) => api.put(`/users/${userId}`, data);
+export const deleteUser = (userId) => api.delete(`/users/${userId}`);
 
 export default api;
