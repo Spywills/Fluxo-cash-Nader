@@ -22,8 +22,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código
 COPY backend/ .
 
+# Copiar script de start
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Expor porta
 EXPOSE 8000
 
 # Comando para iniciar (Railway usa $PORT)
-CMD uvicorn app.main_supabase:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD ["/bin/bash", "/app/start.sh"]
